@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+      table {
+        /* border: 1px solid #000;; */
+      }
+    </style>
+</head>
+<body>
+  <div class="form-container">
+    <div class="form-row">
+      <div class="form-col">
+        <label for="">Growth rate</label>
+      </div>
+      <div class="form-col">
+        <input type="text" class="js-input-growth-rate" value="7%">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-col">
+        <label for="">Term (in years)</label>
+      </div>
+      <div class="form-col">
+        <input type="text" class="js-input-term" value="30">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-col">
+        <label for="">Starting Balance</label>
+      </div>
+      <div class="form-col">
+        <input type="text" class="js-input-starting-balance" value="10000">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-col">
+        <label for="">Contribution</label>
+      </div>
+      <div class="form-col">
+        <input type="text" class="js-input-contribution" value="500">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-col">
+        <label for="">Frequency</label>
+      </div>
+      <div class="form-col">
+        <select name="" class="js-select-frequency" id="">
+          <option value="12" selected>Monthly</option>
+          <option value="4" >Quarterly</option>
+          <option value="2">Biannually</option>
+          <option value="1" >Yearly</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-col">
+        <label for="">Delay by (years)</label>
+      </div>
+      <div class="form-col">
+        <input type="text" class="js-input-delay-by" value="10">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-col">
+        <label for="">Age</label>
+      </div>
+      <div class="form-col">
+        <input type="text" class="js-input-age" value="30">
+      </div>
+    </div>
+  </div>
+
+  <canvas id="myChart" style="width:100%;"></canvas>
+  <table class="js-test-table" border="1"></table>
+
+  <div class="year-container"></div>
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const getTotalYears = (frequency, term) => {
+        return frequency * term;
+      }
+
+      const calculateCurrentAge = (month, age, frequency) => {
+        let x = month % frequency;
+        let thisAge = age;
+        if (x === 0) {
+          thisAge = parseInt(thisAge) + (month / frequency)
+          return thisAge;
+        }
+        return '';
+      }
+
+      const getContribution = (startingBalance, contribution, year) => {
+        let thisContribution = contribution
+        if (year === 0) {
+          thisContribution = startingBalance
+        }
+
+        return thisContribution;
+      }
+
+      // Total without monthly contribution
+      const calculateNoMonthly = (startingBalance, growthRate, currentValue, frequency) => {
+        let total = parseFloat(0);
+        const rate = parseFloat(growthRate) / 100;
+        if (currentValue == 0) {
+          total = parseFloat(startingBalance) + (((parseFloat(startingBalance) * rate) / frequency));
+        } else {
+          total = parseFloat(currentValue) + (((parseFloat(currentValue) * rate) / frequency));
+        }
+
+        return total;
+      }
+
+      // Total with monthly contribution
+      const calculateMonthly = (startingBalance, growthRate, currentValue, frequency, monthlyContribution) => {
+        let total = parseFloat(0);
+        const rate = parseFloat(growthRate) / 100;
+        if (currentValue == 0) {
+          total = parseFloat(startingBalance) + (((parseFloat(startingBalance) * rate) / frequency));
+          total = parseFloat(total) + parseFloat(monthlyContribution);
+        } else {
+          total = (parseFloat(currentValue) + (((parseFloat(currentValue) * rate) / frequency)));
+          total = parseFloat(total) + parseFloat(monthlyContribution);
+        }
+
+        return total;
+      }
+
+      // Total Contribution with starting balance
+      const getTotalContributionBalance = (startingBalance, monthlyContribution, currentValue) => {
+        let total = 0;
+        if (currentValue == 0) {
+          total = startingBalance;
+        } else {
+          total = parseFloat(currentValue) + parseFloat(monthlyContribution)
+        }
+
+        return total;
+      }
+
+      const getMarketReturn = (total, totalContribution) => {
+        let difference = parseFloat(total) - parseFloat(totalContribution);
+        if (difference > 0) {
+          return difference;
+        } else {
+          return '';
+        }
+      }
+
+      const getDelayPeriod = (delayBy, frequency) => {
+        return parseInt(delayBy) * parseInt(frequency);
+      }
+
+      const initChart = (graphAge, graphTotal, graphTotalDelay) => {
+      
+        const xValues = graphAge;
+
+        return new Chart("myChart", {
+          type: "line",
+          data: {
+            labels: xValues,
+            datasets: [{ 
+              data: graphTotal,
+              borderColor: "#841B2E",
+              fill: false,
+              pointBorderColor: 'transparent',
+              pointBackgroundColor: 'transparent'
+            }, {
+              data: graphTotalDelay,
+              borderColor: "#98B4B7",
+              fill: false,
+              pointBorderColor: 'transparent',
+              pointBackgroundColor: 'transparent'
+            }]
+          },
+          options: {
+            plugins: {
+              legend: {
+                position: 'bottom'
+              }
+            },
+            elements: {
+              point: {
+                radius: 5
+              }
+            },
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: "Age"
+                }
+              },
+              y: {
+                title: {
+                  display: true,
+                  text: "Total Balance"
+                },
+                ticks: {
+                  callback: function(value, index, ticks) {
+                    let thisValue = value.toLocaleString();
+                    return '$ ' + thisValue;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      const frequencyField = document.querySelector('.js-select-frequency');
+      const termField = document.querySelector('.js-input-term');
+      const ageField = document.querySelector('.js-input-age');
+      const startingBalanceField = document.querySelector('.js-input-starting-balance');
+      const contributionField = document.querySelector('.js-input-contribution');
+      const growthRateField = document.querySelector('.js-input-growth-rate');
+      const delayByField = document.querySelector('.js-input-delay-by');
+      let thisChart;
+
+      // TEST
+      const testTable = document.querySelector('.js-test-table');
+
+      const graphInit = (frequencyField, termField, ageField, startingBalanceField, contributionField, growthRateField, delayByField) => {
+
+        const frequency = frequencyField.value;
+        const term = termField.value;
+        const age = ageField.value;
+        const startingBalance = startingBalanceField.value;
+        const contribution = contributionField.value;
+        const growthRate = growthRateField.value;
+        const delayBy = delayByField.value;
+        let graphAge = [];
+        let graphTotal = [];
+        let graphTotalDelay = [];
+
+        // TEST
+        // document.querySelector('.year-container').innerHTML = getTotalYears(frequency, term);
+        let tableHTML = `
+        <tr>
+          <th>Months</th>
+          <th>Age</th>
+          <th></th>
+          <th>Contribution</th>
+          <th></th>
+          <th>Market Return</th>
+          <th></th>
+        </tr>`;
+        const theTotalYears = getTotalYears(frequency, term);
+        let thisTotalNoContribution = 0;
+        let thisTotalContribution = 0;
+        let thisTotalContributionBalance = 0;
+
+        let thisDelayTotalNoContribution = 0;
+        let thisDelayTotalContribution = 0;
+        let thisDelayTotalContributionBalance = 0;
+
+        for (let year = 0; year <= theTotalYears; year++) {
+          const thisAge = calculateCurrentAge(year, age, frequency);
+          const thisContribution = getContribution(startingBalance, contribution, year); 
+          let totalNoContributionString = '';
+          let totalContributionString = '';
+          let thisTotalContributionBalanceString = '';
+
+          let delayTotalNoContributionString = '';
+          let delayTotalContributionString = '';
+          let delayThisTotalContributionBalanceString = '';
+
+          if (year !== 0) {
+            thisTotalNoContribution = calculateNoMonthly(startingBalance, growthRate, thisTotalNoContribution, frequency);
+            totalNoContributionString = thisTotalNoContribution;
+            totalNoContributionString = Math.round(totalNoContributionString).toLocaleString();
+            
+            thisTotalContribution = calculateMonthly(startingBalance, growthRate, thisTotalContribution, frequency, contribution);
+            totalContributionString = thisTotalContribution;
+            totalContributionString = Math.round(totalContributionString).toLocaleString();
+          }
+
+          thisTotalContributionBalance = getTotalContributionBalance(startingBalance, contribution, thisTotalContributionBalance);
+          thisTotalContributionBalanceString = thisTotalContributionBalance;
+          thisTotalContributionBalanceString = Math.round(thisTotalContributionBalanceString).toLocaleString();
+
+          const marketReturn = Math.round(getMarketReturn(thisTotalContribution, thisTotalContributionBalance)).toLocaleString();
+
+          const delayPeriod = getDelayPeriod(delayBy, frequency);
+
+          if (year >= delayPeriod) {
+            // DELAY VALUES
+            let delayContribution = (year == delayPeriod) ? startingBalance : contribution;
+            
+            if (year !== delayPeriod) {
+              thisDelayTotalNoContribution = calculateNoMonthly(startingBalance, growthRate, thisDelayTotalNoContribution, frequency);
+              delayTotalNoContributionString = thisDelayTotalNoContribution;
+              delayTotalNoContributionString = Math.round(delayTotalNoContributionString).toLocaleString();
+
+              
+              thisDelayTotalContribution = calculateMonthly(startingBalance, growthRate, thisDelayTotalContribution, frequency, contribution);
+              delayTotalContributionString = thisDelayTotalContribution;
+              delayTotalContributionString = Math.round(delayTotalContributionString).toLocaleString();
+            }
+
+            thisDelayTotalContributionBalance = getTotalContributionBalance(startingBalance, contribution, thisDelayTotalContributionBalance);
+            delayThisTotalContributionBalanceString = thisDelayTotalContributionBalance;
+            delayThisTotalContributionBalanceString = Math.round(delayThisTotalContributionBalanceString).toLocaleString();
+
+            const delayMarketReturn = Math.round(getMarketReturn(thisDelayTotalContribution, thisDelayTotalContributionBalance)).toLocaleString();
+
+            tableHTML += `
+            <tr>
+              <td>${year}</td>
+              <td>${thisAge}</td>
+              <td>${totalNoContributionString}</td>
+              <td>${thisContribution}</td>
+              <td>${totalContributionString}</td>
+              <td>${marketReturn}</td>
+              <td>${thisTotalContributionBalanceString}</td>
+              
+              <td>&nbsp;----&nbsp;</td>
+              <td>${delayTotalNoContributionString}</td>
+              <td>${delayContribution}</td>
+              <td>${delayTotalContributionString}</td>
+              <td>${delayMarketReturn}</td>
+            </tr>`;
+          } else {
+            tableHTML += `
+            <tr>
+              <td>${year}</td>
+              <td>${thisAge}</td>
+              <td>${totalNoContributionString}</td>
+              <td>${thisContribution}</td>
+              <td>${totalContributionString}</td>
+              <td>${marketReturn}</td>
+              <td>${thisTotalContributionBalanceString}</td>
+            </tr>`;
+          }
+          
+          if (thisAge) {
+            let thisTotalContri = thisTotalContribution ? parseInt(Math.round(thisTotalContribution)) : 'Nan';
+            let thisTotalContriDelay = thisDelayTotalContribution ? parseInt(Math.round(thisDelayTotalContribution)) : 'Nan';
+            graphAge.push(parseInt(thisAge));
+            graphTotal.push(parseInt(thisTotalContri));
+            graphTotalDelay.push(parseInt(thisTotalContriDelay));
+          }
+
+        }
+
+        testTable.innerHTML = tableHTML;
+        if (thisChart) {
+          thisChart.destroy();
+          thisChart = initChart(graphAge, graphTotal, graphTotalDelay);
+        } else {
+          thisChart = initChart(graphAge, graphTotal, graphTotalDelay);
+        }
+      }
+      
+      graphInit(frequencyField, termField, ageField, startingBalanceField, contributionField, growthRateField, delayByField);
+
+      frequencyField.addEventListener('change', e => {
+        graphInit(frequencyField, termField, ageField, startingBalanceField, contributionField, growthRateField, delayByField);
+      });
+
+      termField.addEventListener('change', e => {
+        graphInit(frequencyField, termField, ageField, startingBalanceField, contributionField, growthRateField, delayByField);
+      });
+
+      ageField.addEventListener('change', e => {
+        graphInit(frequencyField, termField, ageField, startingBalanceField, contributionField, growthRateField, delayByField);
+      });
+      
+      startingBalanceField.addEventListener('change', e => {
+        graphInit(frequencyField, termField, ageField, startingBalanceField, contributionField, growthRateField, delayByField);
+      });
+
+      contributionField.addEventListener('change', e => {
+        graphInit(frequencyField, termField, ageField, startingBalanceField, contributionField, growthRateField, delayByField);
+      });
+
+      growthRateField.addEventListener('change', e => {
+        graphInit(frequencyField, termField, ageField, startingBalanceField, contributionField, growthRateField, delayByField);
+      });
+
+      delayByField.addEventListener('change', e => {
+        graphInit(frequencyField, termField, ageField, startingBalanceField, contributionField, growthRateField, delayByField);
+      });
+
+      
+    </script>
+</body>
+</html>
