@@ -233,10 +233,7 @@
                     tooltipEl.style.opacity = 0;
                     return;
                   }
-
-                  console.log(context)
-                  console.log('-------------')
-
+                  
                   // Set Text
                   if (tooltip.body) {
                     const tableRoot = tooltipEl.querySelector('table');
@@ -244,12 +241,7 @@
                     // Remove old children
                     tableRoot.innerHTML = '';
 
-                    // Add new children
-                    // tableRoot.appendChild(tableHead);
-                    // tableRoot.appendChild(tableBody);
-                    console.log(chart.tooltip.title)
-                    console.log(tooltip.dataPoints[0].dataset.id)
-
+                    // Add new children                    
                     let thisHTML, thisAge, thisInterest, thisContribution, thisTotal;
                     
                     if (tooltip.dataPoints[0].dataset.id == 2) {
